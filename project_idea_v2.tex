@@ -1,0 +1,27 @@
+In this experiment, we study the problem of efficient LLM inference scheduling in cloud data centers. This problem is critical due to (i) the rapid growth of LLM-based services across enterprise and consumer applications, and (ii) the high cost and limited availability of GPU resources, which makes efficient utilization essential. Prior measurements show that mismatches between provisioned capacity and workload demand can lead to both SLA violations and significant resource wastage. Therefore, it is necessary to dynamically adjust resource provisioning based on time-varying demand. 
+
+In production systems, LLM workloads are heterogeneous in both resource requirements and service-level objectives (SLAs). Interactive workloads (IW), such as chatbots and code completion, are latency-sensitive and require strict time-to-first-token (TTFT) guarantees, often within seconds. In contrast, non-interactive workloads (NIW), such as document summarization and batch content generation, are less latency-sensitive and prioritize throughput and output quality over response time. These workloads typically involve larger models and longer execution times. To improve resource efficiency, recent systems propose colocating heterogeneous workloads within a unified resource pool and dynamically allocating capacity across workload types.
+
+We consider $M$ heterogeneous LLM workloads, the server provisioning action is defined as $x_{t} \in R^{M}$. Dimension $i \in [N]$ in the action $x_t$ denotes provisioned resource for task $i$, such as the amount of VMs created [correct this for me if it's wrong based on the paper's context]. At time $t$, we define the electricity price as $p_t$, and use the mean latency modeling $T() = $ in M/M/1 model as the SLA objective. 
+
+and use 
+
+we define the configuration that optimizing the 
+
+f(x_t) = a_t \| x_t \|_1 + 
+
+suppose the optimal configur
+
+and at time $t$, the optimal 
+
+
+resource load
+
+In the unified resouce pool, we assume 
+
+
+However, several fundamental challenges arise due to demand dynamics. First, workload types exhibit distinct temporal characteristics. Interactive workloads show strong diurnal patterns and high predictability, whereas non-interactive workloads are less periodic and more irregular. As a result, the optimal resource allocation must adapt to time-varying demand across workload types, requiring dynamic reconfiguration of model instances and GPU resources. This includes scaling model instances and adjusting model placement to match workload requirements.
+
+Second, reconfiguration incurs non-negligible overhead. Provisioning new model instances requires VM allocation and model loading, which can take from minutes to hours depending on model size and system state. These cold-start delays lead to temporary resource unavailability and increased latency. Frequent reconfiguration can therefore introduce significant switching costs, including performance degradation and wasted GPU cycles.
+
+Consequently, the optimal scheduling policy must jointly consider (i) instantaneous performance, determined by current workload demand and SLA requirements, and (ii) reconfiguration costs associated with scaling and model placement. Balancing these factors is essential to avoid both under-provisioning, which violates SLAs, and over-provisioning, which reduces resource efficiency.
