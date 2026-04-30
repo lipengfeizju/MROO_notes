@@ -2,26 +2,23 @@ In this experiment, we study the problem of efficient LLM inference scheduling i
 
 In production systems, LLM workloads are heterogeneous in both resource requirements and service-level objectives (SLAs). Interactive workloads (IW), such as chatbots and code completion, are latency-sensitive and require strict time-to-first-token (TTFT) guarantees, often within seconds. In contrast, non-interactive workloads (NIW), such as document summarization and batch content generation, are less latency-sensitive and prioritize throughput and output quality over response time. These workloads typically involve larger models and longer execution times. To improve resource efficiency, recent systems propose colocating heterogeneous workloads within a unified resource pool and dynamically allocating capacity across workload types.
 
-We consider $M$ heterogeneous LLM workloads, the server provisioning action is defined as $x_{t} \in R^{M}$. Dimension $i \in [N]$ in the action $x_t$ denotes provisioned resource for task $i$, such as the amount of VMs created [correct this for me if it's wrong based on the paper's context]. At time $t$, we define the electricity price as $p_t$, and use the mean latency modeling $T() = $ in M/M/1 model as the SLA objective. 
-
-and use 
-
-we define the configuration that optimizing the 
-
-f(x_t) = a_t \| x_t \|_1 + 
-
-suppose the optimal configur
-
-and at time $t$, the optimal 
-
-
-resource load
-
-In the unified resouce pool, we assume 
-
-
-However, several fundamental challenges arise due to demand dynamics. First, workload types exhibit distinct temporal characteristics. Interactive workloads show strong diurnal patterns and high predictability, whereas non-interactive workloads are less periodic and more irregular. As a result, the optimal resource allocation must adapt to time-varying demand across workload types, requiring dynamic reconfiguration of model instances and GPU resources. This includes scaling model instances and adjusting model placement to match workload requirements.
-
-Second, reconfiguration incurs non-negligible overhead. Provisioning new model instances requires VM allocation and model loading, which can take from minutes to hours depending on model size and system state. These cold-start delays lead to temporary resource unavailability and increased latency. Frequent reconfiguration can therefore introduce significant switching costs, including performance degradation and wasted GPU cycles.
-
+However, several fundamental challenges arise due to demand dynamics. First, workload types exhibit distinct temporal characteristics. Interactive workloads show strong diurnal patterns and high predictability, whereas non-interactive workloads are less periodic and more irregular. As a result, the optimal resource allocation must adapt to time-varying demand across workload types, requiring dynamic reconfiguration of model instances and GPU resources. This includes scaling model instances and adjusting model placement to match workload requirements. Second, reconfiguration incurs non-negligible overhead. Provisioning new model instances requires VM allocation and model loading, which can take from minutes to hours depending on model size and system state. These cold-start delays lead to temporary resource unavailability and increased latency. Frequent reconfiguration can therefore introduce significant switching costs, including performance degradation and wasted GPU cycles.
 Consequently, the optimal scheduling policy must jointly consider (i) instantaneous performance, determined by current workload demand and SLA requirements, and (ii) reconfiguration costs associated with scaling and model placement. Balancing these factors is essential to avoid both under-provisioning, which violates SLAs, and over-provisioning, which reduces resource efficiency.
+
+
+We consider $M$ heterogeneous LLM workloads. The provisioning decision at time $t$ is denoted by $x_t \in \mathbb{R}^M$, where $x_{i,t}$ represents the provisioned service capacity for workload $i$. For clearity, we use the aggregate capacity of model instances measured in token processed per second (TPS) rather than the raw number of VMs to measure the action $x_{i,t}$.
+
+Let $p_t$ denote the unit resource cost at time $t$. The total provisioning cost is given by $p_t \sum_{i=1}^M x_{i,t}$. Let $y_{i,t}$ denote the incoming demand (also in TPS) for workload $i$. System stability requires $x_{i,t} > y_{i,t}$. We model the service-level objective (SLA) using an M/M/1 latency approximation. Specifically, the latency cost for workload $i$ is $c_i \frac{1}{\rho x_{i,t} - y_{i,t}}$, where $c_i$ captures the latency sensitivity of workload $i$. Interactive workloads are assigned larger weights than non-interactive workloads. The per-step performance cost is defined as
+\begin{equation}
+    f_t(x_t) = p_t \sum_{i=1}^M x_{i,t} + \sum_{i=1}^M c_i \frac{1}{\rho x_{i,t} - y_{i,t}}.
+\end{equation}
+
+To capture reconfiguration overhead, we introduce a switching cost for each workload, 
+$\frac{1}{2}(x_{i,t} - x_{i,t-1})^2$.
+We further define a long-term regularizer to enforce fairness across workloads:
+\begin{equation}
+    g(x_{1:T}) = \max_{i} \sum_{t=1}^T \frac{l_i}{2}(x_{i,t} - x_{i,t-1})^2,
+\end{equation}
+where $l_i$ reflects the reconfiguration cost for workload type $i$, which increases with model size and weight loading overhead.
+
+
